@@ -79,6 +79,8 @@ Rules for cards:
 - No design decision is left to the builder. Every choice it would need (names, data shapes, libraries, error behaviour) is in the card or in `docs/ARCHITECTURE.md`.
 - "Done when" lines are examples, not adjectives: `POST /subscribe with a bad email returns 400 and {"error":"invalid email"}`, not `handles bad input well`.
 
+If the plan has a UI that people see, read `references/website-pack.md` in this skill's folder now and add the feature cards it asks for.
+
 Before showing me the plan, re-read every card as a smaller model with no other context would. Wherever it would have to guess, fill the gap in, or move it to `## Open questions`.
 
 ## 2. Pick the extras
@@ -99,6 +101,8 @@ Read `references/skill-catalog.md` in this skill's folder. Tag each feature card
 - **Stack reviewers:** one multi-select question with the matching reviewers from the catalog, at most two recommended.
 
 Add the ones I pick as the catalog says. Never add a skill or reviewer that isn't in the catalog; if the stack has no match, say so in the report instead.
+
+If the website pack applies (step 1d), its questions go in this round too, and you set it up as it says.
 
 ## 3. Repo basics
 
@@ -167,7 +171,7 @@ Set its frontmatter model to Sonnet; the feature cards are written so a smaller 
 6. Write the tests first and nothing else: one or more per "Done when" line of the card. Run them and confirm each fails for the right reason.
 7. Write the least code that makes them pass, following `AGENTS.md`. Never edit a test to make it pass.
 8. Run `check` and fix every failure.
-9. Run the `ponytail-reviewer` on the files this feature touched. Remove every bloat item it reports, unless removing it would break the feature. In that case keep it and say why in one line.
+9. Run the `ponytail-reviewer` on the files this feature touched, and the `design-reviewer` (website pack) on its UI files. Remove every bloat item it reports, unless removing it would break the feature. In that case keep it and say why in one line.
 10. Test audit (extra): delete any test that wouldn't fail if its behaviour broke, duplicates another test, or tests trivial code.
 11. Run the `correctness-reviewer` (extra) and any stack reviewers (step 2b) on the same files and fix every must-fix item.
 12. Run `check` again.
@@ -180,7 +184,7 @@ Stop and report at the first step that fails.
 1. Every feature in the current phase must be ticked. If not, list the unticked ones and stop.
 2. Run `check`. Fix every failure.
 3. Show the phase's Gate passing, then ask me to confirm. Stop if I don't.
-4. Run the `ponytail-reviewer` (and the `correctness-reviewer` and stack reviewers, if present) on all uncommitted changes together, looking for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Fix what they report, then run `check` again.
+4. Run the `ponytail-reviewer` (and the `correctness-reviewer`, stack reviewers and `design-reviewer`, if present) on all uncommitted changes together, looking for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Fix what they report, then run `check` again.
 5. Make sure `docs/ARCHITECTURE.md` (if it exists) matches the code.
 6. Add the phase's user-visible changes under `[Unreleased]` in `CHANGELOG.md` (extra).
 7. Mark the phase heading in `docs/PLAN.md` with `(shipped)`.
