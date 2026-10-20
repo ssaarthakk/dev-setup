@@ -30,6 +30,7 @@ Third-party skills and reviewers that dev-setup may add to a project. Offer one 
 | api-anything | `goodnight000/api-anything` | `daca03ac08238a91e22c53085c6d0c01310fc56b` | MIT |
 | emil | `emilkowalski/skills` | `2d228630ba1446365f614a108cb8252f1feda202` | MIT |
 | taste | `Leonxlnx/taste-skill` | `63aba5f43b5056758b15bbe7d683da8c86a7a7ad` | MIT |
+| transitions | `Jakubantalik/transitions.dev` | `7ec0b0b0b8beb15788a9de68a40ec6be2d5e84b5` | Custom (per skill `LICENSE.txt`): free to use in any product; never redistribute the library itself |
 
 Paths are `skills/<name>` unless the table says otherwise.
 
@@ -74,6 +75,7 @@ Offered only through `website-pack.md`. `web-taste` overrides all of them.
 | `review-animations` | emil | The plan has meaningful motion (page transitions, animated components) |
 | `frontend-design` | anthropic | Instead of impeccable, when I decline its binary and hook |
 | `taste-skill` | taste | Art direction from reference images. Only if I pick it; it overlaps impeccable |
+| `transitions-dev`, `transitions-polish` | transitions | The plan has interactive UI states (menus, modals, toasts, tabs, loading). Plain CSS, any stack. Never copy `transitions-ui-generation` (bundled JS) |
 
 impeccable is the one approved exception to the no-scripts, no-hooks rule. Its skill runs a launcher that downloads a pinned native binary into `~/.impeccable/bin/` on first use, and its installer adds a design-detector hook that runs after UI edits. Install it with its own installer, never by copying:
 ```

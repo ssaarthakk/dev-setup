@@ -42,7 +42,7 @@ Add to `AGENTS.md`: `Launch readiness follows .claude/skills/launch-check/SKILL.
 Offer these for public sites and product UI where the look matters, not for plain internal tools.
 
 In the step 2b round, ask:
-- **Design skills** (multi-select, from the catalog's design table): impeccable and `emil-design-eng` recommended, `review-animations` if the plan has meaningful motion, `frontend-design` and `taste-skill` as alternatives. Describe impeccable's binary and hook in its option.
+- **Design skills** (multi-select, from the catalog's design table): impeccable and `emil-design-eng` recommended, `review-animations` if the plan has meaningful motion, `transitions-dev` and `transitions-polish` if it has interactive UI states, `frontend-design` and `taste-skill` as alternatives. Describe impeccable's binary and hook in its option.
 - **UI registries** (multi-select), only for React + Tailwind + shadcn stacks: the registries in the `ui-sources` skill, recommended where the plan's features need them (charts: bklit UI; text and reveal motion: Motion Primitives; marketing sections: Kokonut UI or Magic UI).
 
 For picked registries:
