@@ -37,11 +37,13 @@ Copy `skills/dev-setup/` into your agent's skills folder. For Claude Code, that'
 
 ## How it works
 
-1. **Reads your plan** and asks only what the plan leaves out: stack, package manager, hosting, public or private.
-2. **Lets you pick extras** from a 16-item checklist, with a recommendation based on how complex the project is.
-3. **Builds the setup** for your stack, from rules to CI.
-4. **Verifies it**: installs, runs the checks, and tests every hook once.
-5. **Commits** `chore: add dev setup`. It never pushes.
+1. **Reads your plan**, however messy or partial it is, and checks it for gaps.
+2. **Completes it with you.** It fills structural gaps itself (phases, acceptance criteria, gates), picks marked defaults for cheap technical choices, and asks you about everything else in short rounds. It never invents product, money, legal or privacy decisions; anything still unknown becomes an open question that `/feature` won't build past.
+3. **Writes the project's own docs**: `docs/PLAN.md` always, plus `ARCHITECTURE.md` and `PROJECT.md` when the project is big enough to need them. Your original plan is never edited.
+4. **Lets you pick extras** from a 16-item checklist, with a recommendation based on how complex the project is.
+5. **Builds the setup** for your stack, from rules to CI.
+6. **Verifies it**: installs, runs the checks, and tests every hook once.
+7. **Commits** `chore: add dev setup`. It never pushes.
 
 After that, the loop is simple:
 
@@ -58,7 +60,8 @@ After that, the loop is simple:
 | | |
 |---|---|
 | `AGENTS.md` + `CLAUDE.md` | One rules file every agent reads (`CLAUDE.md` imports it): KISS, DRY, no comments in code, no unasked dependencies, test-first, commit format, security |
-| `docs/PLAN.md` | Your plan, as phases with feature checkboxes and a gate per phase |
+| `docs/PLAN.md` | Your completed plan, as phases with feature checkboxes, acceptance criteria, a gate per phase, and open questions |
+| `docs/ARCHITECTURE.md`, `docs/PROJECT.md` | Stack and contracts, and product background, split out only when the project is big enough to need them |
 | `/feature` | Picks the next feature, writes failing tests first, implements, runs checks and reviews, ticks it off |
 | `/ship` | Proves the phase gate, reviews the whole phase, makes one commit |
 | `ponytail-reviewer` | Read-only reviewer that only hunts bloat: unused code, duplication, over-engineering, comments |
@@ -86,7 +89,7 @@ Want different defaults? Fork it and edit [`skills/dev-setup/SKILL.md`](skills/d
 
 ## Writing a plan
 
-Any Markdown plan works. The skill turns it into phases and checkboxes for you. It works best when the plan says:
+Any Markdown plan works, even a rough list of ideas. The skill asks you about whatever is missing. The fewer questions you want, the more of this the plan should say:
 
 - what the project is and who it's for
 - the stack and where it deploys
