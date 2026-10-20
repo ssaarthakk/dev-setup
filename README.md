@@ -39,7 +39,7 @@ Copy `skills/dev-setup/` into your agent's skills folder. For Claude Code, that'
 
 1. **Reads your plan**, however messy or partial it is, and checks it for gaps.
 2. **Completes it with you.** It fills structural gaps itself (phases, acceptance criteria, gates), picks marked defaults for cheap technical choices, and asks you about everything else in short rounds. It never invents product, money, legal or privacy decisions; anything still unknown becomes an open question that `/feature` won't build past.
-3. **Writes the project's own docs**: `docs/PLAN.md` always, plus `ARCHITECTURE.md` and `PROJECT.md` when the project is big enough to need them. Your original plan is never edited.
+3. **Writes the project's own docs**: `docs/PLAN.md` always, plus `ARCHITECTURE.md` and `PROJECT.md` when the project is big enough to need them. Your original plan is never edited, and it is gitignored if it sits in the project folder.
 4. **Lets you pick extras** from a 16-item checklist, with a recommendation based on how complex the project is.
 5. **Builds the setup** for your stack, from rules to CI.
 6. **Verifies it**: installs, runs the checks, and tests every hook once.
@@ -52,6 +52,15 @@ After that, the loop is simple:
 /feature   ...
 /ship      phase done: gate passes, cross-feature review, one commit for the phase
 ```
+
+Or let it run overnight (Claude Code):
+
+```
+/autopilot      build every remaining phase unattended
+/autopilot 2    stop after two phases
+```
+
+For each phase, autopilot builds every feature in a fresh agent, test-first. It has each one checked by an independent verifier plus both reviewers, gives failures up to two fix rounds, and stages each verified feature as a checkpoint. Then it reviews the whole phase, proves its gate, and makes the phase's one commit before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
 
 ## What you get
 
@@ -70,6 +79,8 @@ After that, the loop is simple:
 | Pinned dev tools | `format` and `check` scripts with the smallest tool set for your stack |
 
 ### Pick per project
+
+**Autopilot** (Claude Code only): the `/autopilot` command and its saved workflow, described above. It's recommended for any plan with more than one phase.
 
 | Hooks | Agents and skills | Rules and toolchain | Repo files |
 |---|---|---|---|

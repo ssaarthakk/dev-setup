@@ -52,13 +52,13 @@ Then show me, in one message, the acceptance criteria and phases you drafted and
 
 Split by size, so each session reads only what it needs:
 
-- **`docs/PLAN.md`, always.** Only the build plan: `## Phase <n>: <name>` headings, a `- [ ]` checkbox per feature with its acceptance criteria, a one-line **Gate:** per phase, and `## Open questions` if any are left.
+- **`docs/PLAN.md`, always.** Only the build plan: `## Phase <n>: <name>` headings, a `- [ ]` checkbox per feature with its acceptance criteria, a one-line **Gate:** per phase, and `## Open questions` if any are left. Write each Gate as something an agent can prove by running commands (tests, a script, a build, a request to a local server), so `/autopilot` can check it unattended. If a gate truly needs a person, say so on its line.
 - **`docs/ARCHITECTURE.md`** when the project has more than one part, a data store, or external services: stack, folder layout, how the parts talk, data shapes and contracts, external services.
 - **`docs/PROJECT.md`** when the background is more than a short paragraph: what it is, who it's for, the problem, out of scope, what stays private.
 
 When a doc isn't needed, put its content as a short section at the top of `docs/PLAN.md` instead.
 
-If my original plan is inside the project folder, ask me whether to keep it as `docs/original-plan.md` or leave it out of git.
+If my original plan is inside the project folder, leave it where it is and add its path to `.gitignore`. The docs above replace it in the repo.
 
 ## 2. Pick the extras
 
@@ -103,7 +103,7 @@ Keep `AGENTS.md` short; it loads every session. Start with one line on what the 
 
 **Workflow**
 - Work follows `docs/PLAN.md`. Build one feature at a time with `/feature`.
-- When every feature in a phase is ticked, run `/ship`. It makes exactly one commit for the whole phase. Never commit or push outside `/ship`.
+- When every feature in a phase is ticked, run `/ship`. It makes exactly one commit for the whole phase. Never commit or push outside `/ship` (or the ship step of `/autopilot`, if this project has it).
 - The steps for `/feature` and `/ship` are in `.claude/skills/feature/SKILL.md` and `.claude/skills/ship/SKILL.md`. If your agent has no slash commands, read that file and follow it when asked to build a feature or ship a phase. Do the same for the reviewers in `.claude/agents/`: when a step says to run a reviewer, apply its file as a review checklist.
 - Run `check` before saying anything is done.
 - When a requirement is unclear, ask. Don't guess. Never build on an item in `## Open questions`; ask me to answer it first.
@@ -176,6 +176,7 @@ If there's nothing to remove, it says `No bloat found.` and nothing else. No sty
   - Before any shell command: block `git push --force`, `git push -f`, `git reset --hard`, `--no-verify`, `core.hooksPath` and `Co-Authored-By`, with a clear message.
   - Before any Edit or Write: block paths matching `.env*` (except `.env.example`) or `*playbook*`.
 - Plugins and MCP servers: list the ones the stack would benefit from (for example a payments plugin if the project takes payments). Ask me which to add in one multi-select question, and add only the ones I pick.
+- In the same round of questions, ask whether to add **Autopilot** (section 12): unattended, phase-by-phase building with a commit per phase, for example overnight. It needs Claude Code's Workflow tool. Recommend it for projects with more than one phase.
 
 ## 8. GitHub
 
@@ -196,7 +197,7 @@ If there's nothing to remove, it says `No bloat found.` and nothing else. No sty
 ## 10. Commit and report
 
 1. Stage everything and commit with exactly `chore: add dev setup`. No body, no trailers. Do not push.
-2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1.
+2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1, or `/autopilot` if it was added.
 
 ## 11. Extras
 
@@ -225,3 +226,16 @@ Build only the ones picked in step 2.
 - **.env.example:** every environment variable the project needs, with empty values.
 - **LICENSE + SECURITY.md:** MIT unless the plan says otherwise; ask if the repo is private. `SECURITY.md` says how to report a vulnerability privately.
 - **CLAUDE.local.md:** a gitignored file for my machine-specific notes (OS, shell, local paths). Start it with the OS and shell detected. Other agents can be pointed at it from their own local config.
+
+## 12. Autopilot (Claude Code only, if picked in step 7)
+
+Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh agent (test-first, following `/feature`), verifies each one with an independent verifier plus both reviewers, gives failures up to two fix rounds, and stages each verified feature as a checkpoint. When the phase is done, it reviews the whole phase, proves the Gate, and commits once with `feat: <phase name>`. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
+
+1. Build the Correctness reviewer extra too, even if I didn't pick it; autopilot relies on it.
+2. Copy this skill's own `assets/autopilot.js` to `.claude/workflows/autopilot.js` without changes. Check the current docs for where saved workflows live and move it if needed.
+3. Create the user-invoked skill `.claude/skills/autopilot/SKILL.md`, with an optional number of phases as its argument:
+   1. Run `git status` and read `docs/PLAN.md`. Tell me which phase it will start from, how many features are left, and how many phases it will run (all remaining ones if no number was given).
+   2. Remind me that it runs unattended: start Claude Code in a permission mode that won't stop for approvals (auto mode), and keep the machine awake. It commits each phase locally and never pushes.
+   3. Run the saved workflow `autopilot` with the Workflow tool, passing `{ "phases": <number> }` as args when a number was given.
+   4. When it returns, report each phase's commit and features, why it stopped, and anything in `git stash list` from this run. Tell me the next step: review the commits and push, or resolve the reported problem and run `/autopilot` again.
+4. Add one line to `AGENTS.md`: `/autopilot` builds and commits whole phases unattended; never run it unless I ask.
