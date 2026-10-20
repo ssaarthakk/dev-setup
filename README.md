@@ -60,7 +60,7 @@ Or let it run overnight (Claude Code):
 /autopilot 2    stop after two phases
 ```
 
-For each phase, autopilot builds every feature in a fresh agent, test-first. It has each one checked by an independent verifier plus both reviewers, gives failures up to two fix rounds, and stages each verified feature as a checkpoint. Then it reviews the whole phase, proves its gate, and makes the phase's one commit before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
+For each phase, autopilot builds every feature in a fresh Sonnet agent, test-first. It has each one checked by an independent verifier plus both reviewers on your session model, gives failures two fix rounds on Sonnet and a last one on your session model, and stages each verified feature as a checkpoint. Then it reviews the whole phase, proves its gate, and makes the phase's one commit before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
 
 ## What you get
 
@@ -69,7 +69,7 @@ For each phase, autopilot builds every feature in a fresh agent, test-first. It 
 | | |
 |---|---|
 | `AGENTS.md` + `CLAUDE.md` | One rules file every agent reads (`CLAUDE.md` imports it): KISS, DRY, no comments in code, no unasked dependencies, test-first, commit format, security |
-| `docs/PLAN.md` | Your completed plan, as phases with feature checkboxes, acceptance criteria, a gate per phase, and open questions |
+| `docs/PLAN.md` | Your completed plan, as phases of feature cards a smaller model can build from, a gate per phase, and open questions |
 | `docs/ARCHITECTURE.md`, `docs/PROJECT.md` | Stack and contracts, and product background, split out only when the project is big enough to need them |
 | `/feature` | Picks the next feature, writes failing tests first, implements, runs checks and reviews, ticks it off |
 | `/ship` | Proves the phase gate, reviews the whole phase, makes one commit |
@@ -88,6 +88,18 @@ For each phase, autopilot builds every feature in a fresh agent, test-first. It 
 | Stop gate | Docs researcher | Size limits | `.env.example` |
 | File size guard | `/adr` decision records | Pinned toolchain (mise) | LICENSE + SECURITY.md |
 | Git pre-commit hooks | `/fix-ci` | Test audit step | `CLAUDE.local.md` |
+
+## Big model plans, small model builds
+
+The expensive thinking happens once. During setup, your session model (for example Opus) makes every design decision and writes each feature as a self-contained card: the files it touches, what it builds on, concrete "done when" examples that become tests, and what's out of scope. It then re-reads every card as a smaller model would, and fills in anything that model would have to guess.
+
+After that:
+
+| Step | Model |
+|---|---|
+| `/dev-setup`, `/ship`, verification, reviewers | Your session model |
+| `/feature`, autopilot builds and first two fix rounds | Sonnet |
+| Autopilot's last fix round before giving up | Your session model |
 
 ## Opinions baked in
 

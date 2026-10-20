@@ -4,16 +4,17 @@ export const meta = {
   whenToUse: 'Unattended runs, for example overnight. Optional args: { phases: n } to stop after n phases. Stops at the first feature or phase it cannot finish cleanly.',
   phases: [
     { title: 'Plan', detail: 'read docs/PLAN.md and git status' },
-    { title: 'Build', detail: 'one fresh agent per feature, test-first' },
-    { title: 'Verify', detail: 'checks, acceptance criteria and reviewers, in parallel' },
-    { title: 'Fix', detail: 'repair what verification found' },
+    { title: 'Build', detail: 'one fresh Sonnet agent per feature, test-first', model: 'sonnet' },
+    { title: 'Verify', detail: 'checks, acceptance criteria and reviewers, in parallel, on the session model' },
+    { title: 'Fix', detail: 'Sonnet first, the session model for the last round' },
     { title: 'Checkpoint', detail: 'stage a verified feature, or set a failed attempt aside' },
     { title: 'Ship', detail: 'phase review, gate, one commit per phase' },
   ],
 }
 
 const REVIEWERS = ['ponytail-reviewer', 'correctness-reviewer']
-const MAX_FIX_ROUNDS = 2
+const BUILD_MODEL = 'sonnet'
+const MAX_FIX_ROUNDS = 3
 const MAX_PHASES = args && Number.isInteger(args.phases) && args.phases > 0 ? args.phases : Infinity
 const UNATTENDED = 'Nobody is watching this run, so never ask the user anything. Never push, reset, rebase, or delete work you did not create.'
 const FEATURE_SCOPE = 'Staged changes are earlier features that already passed verification. This feature is only the unstaged changes and untracked files.'
@@ -82,7 +83,7 @@ async function verifyUntilClean(subject, scope, checks, label) {
     log(`${label}: fix round ${rounds}, ${problems.length} problems`)
     await agent(
       `${UNATTENDED} Fix these problems in ${subject}. ${scope} Never weaken or delete a test to make it pass; if a test itself is wrong, fix the test and say why. Run the check script when done.\n\n${problems.map((problem) => `- ${problem}`).join('\n')}`,
-      { label: `fix ${label} round ${rounds}`, phase: 'Fix' },
+      { label: `fix ${label} round ${rounds}`, phase: 'Fix', model: rounds < MAX_FIX_ROUNDS ? BUILD_MODEL : undefined },
     )
     problems = await review(subject, scope, checks, `${label} round ${rounds}`)
   }
@@ -92,18 +93,18 @@ async function verifyUntilClean(subject, scope, checks, label) {
 async function setAside(subject, label) {
   await agent(
     `${UNATTENDED} ${subject} could not be finished cleanly. Set the unstaged attempt aside without losing it: run git stash push --keep-index --include-untracked -m "autopilot: ${label}", then run git status and confirm that only staged changes remain.`,
-    { label: `set aside ${label}`, phase: 'Checkpoint', effort: 'low' },
+    { label: `set aside ${label}`, phase: 'Checkpoint', model: BUILD_MODEL, effort: 'low' },
   )
 }
 
-const FEATURE_CHECKS = 'Run the check script and report every failure. Then read the feature\'s acceptance criteria in docs/PLAN.md, its tests and its code: every criterion needs a test that would fail if that behaviour broke. Report any criterion without one, any test that would still pass with the feature removed, and any existing test that was weakened or deleted.'
+const FEATURE_CHECKS = 'Run the check script and report every failure. Then read the feature\'s card in docs/PLAN.md, its tests and its code: every "Done when" line needs a test that would fail if that behaviour broke, and nothing outside the card\'s "Touches" and scope may change without a reason. Report any line without a test, any test that would still pass with the feature removed, and any existing test that was weakened or deleted.'
 const PHASE_CHECKS = 'Run the check script and report every failure. Prove the phase\'s Gate line in docs/PLAN.md by running the commands that demonstrate it; report a problem if it fails or cannot be shown without a person. Then look for what only shows across features: repeated code, drifted contracts, code a later feature made unused.'
 
 while (run.length < MAX_PHASES) {
   phase('Plan')
   const plan = await agent(
-    `${UNATTENDED} Read docs/PLAN.md and run git status. The current phase is the first one whose heading is not marked (shipped). Return its name, and its unticked features in order, each as the exact text of its checkbox line; return an empty list if all are ticked. Set stop to a one-line reason when every phase is shipped, or when there are uncommitted changes that do not belong to features of the current phase. Otherwise set stop to an empty string.`,
-    { label: `read plan ${run.length + 1}`, phase: 'Plan', schema: PLAN, effort: 'low' },
+    `${UNATTENDED} Read docs/PLAN.md and run git status. The current phase is the first one whose heading is not marked (shipped). Return its name, and its unticked features in order, each as the feature's name in bold on its checkbox line; return an empty list if all are ticked. Set stop to a one-line reason when every phase is shipped, or when there are uncommitted changes that do not belong to features of the current phase. Otherwise set stop to an empty string.`,
+    { label: `read plan ${run.length + 1}`, phase: 'Plan', schema: PLAN, model: BUILD_MODEL, effort: 'low' },
   )
   if (!plan) return finish('The plan could not be read.')
   if (plan.stop) return finish(plan.stop)
@@ -116,8 +117,8 @@ while (run.length < MAX_PHASES) {
     const label = `p${run.length} ${index + 1}/${plan.features.length}`
     const subject = `the feature "${feature}"`
     const built = await agent(
-      `${UNATTENDED} Never commit. Build this feature from docs/PLAN.md: "${feature}". ${FEATURE_SCOPE} Follow .claude/skills/feature/SKILL.md, with three changes: skip its reviewer and test audit steps, because independent agents run them after you; do not stage anything; and if the feature depends on an open question or you would need to ask the user anything, stop before writing code and return blocked with the exact question. Return done only when the tests were written first and failed for the right reason, they now pass, the check script passes, and the feature is ticked in docs/PLAN.md.`,
-      { label: `build ${label}`, phase: 'Build', schema: BUILD },
+      `${UNATTENDED} Never commit. Build this feature from docs/PLAN.md: "${feature}". ${FEATURE_SCOPE} Its card in docs/PLAN.md says what to touch and when it is done. Follow .claude/skills/feature/SKILL.md, with three changes: skip its reviewer and test audit steps, because independent agents run them after you; do not stage anything; and if the feature depends on an open question, its card leaves a design decision open, or you would need to ask the user anything, stop before writing code and return blocked with the exact question. Return done only when the tests were written first and failed for the right reason, they now pass, the check script passes, and the feature is ticked in docs/PLAN.md.`,
+      { label: `build ${label}`, phase: 'Build', schema: BUILD, model: BUILD_MODEL },
     )
     if (!built || built.status !== 'done') {
       await setAside(subject, label)
@@ -134,7 +135,7 @@ while (run.length < MAX_PHASES) {
 
     await agent(
       `${UNATTENDED} Never commit. ${subject} passed verification. Stage it as a checkpoint: run git add -A, then run git status and confirm nothing is left unstaged.`,
-      { label: `checkpoint ${label}`, phase: 'Checkpoint', effort: 'low' },
+      { label: `checkpoint ${label}`, phase: 'Checkpoint', model: BUILD_MODEL, effort: 'low' },
     )
     current.features.push({ feature, status: 'done', fixRounds: verified.rounds, summary: built.summary })
   }

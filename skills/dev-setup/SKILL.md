@@ -46,19 +46,40 @@ For each gap, choose one of three:
 
 Ask in rounds of at most four questions, most important first, each with your recommended answer. Use my answers to decide whether the next round is needed. After three rounds, stop asking: put whatever is still unknown under `## Open questions` in `docs/PLAN.md`.
 
-Then show me, in one message, the acceptance criteria and phases you drafted and the defaults you picked. Ask me to confirm or correct them in one reply.
+Then show me, in one message, the phases and feature cards you drafted (in the format from step 1d) and the defaults you picked. Ask me to confirm or correct them in one reply.
 
 ### 1c. Write the docs
 
 Split by size, so each session reads only what it needs:
 
-- **`docs/PLAN.md`, always.** Only the build plan: `## Phase <n>: <name>` headings, a `- [ ]` checkbox per feature with its acceptance criteria, a one-line **Gate:** per phase, and `## Open questions` if any are left. Write each Gate as something an agent can prove by running commands (tests, a script, a build, a request to a local server), so `/autopilot` can check it unattended. If a gate truly needs a person, say so on its line.
+- **`docs/PLAN.md`, always.** Only the build plan: `## Phase <n>: <name>` headings, a feature card per feature (format below), a one-line **Gate:** per phase, and `## Open questions` if any are left. Write each Gate as something an agent can prove by running commands (tests, a script, a build, a request to a local server), so `/autopilot` can check it unattended. If a gate truly needs a person, say so on its line.
 - **`docs/ARCHITECTURE.md`** when the project has more than one part, a data store, or external services: stack, folder layout, how the parts talk, data shapes and contracts, external services.
 - **`docs/PROJECT.md`** when the background is more than a short paragraph: what it is, who it's for, the problem, out of scope, what stays private.
 
 When a doc isn't needed, put its content as a short section at the top of `docs/PLAN.md` instead.
 
 If my original plan is inside the project folder, leave it where it is and add its path to `.gitignore`. The docs above replace it in the repo.
+
+### 1d. Write features a smaller model can build
+
+Features are built with a smaller, cheaper model (Sonnet), so you make every design decision now, while you have the whole picture. Write each feature as a card:
+
+```
+- [ ] **<Feature name>**: <one line on what it does>
+  - Touches: <files or modules, using the names in ARCHITECTURE.md>
+  - Builds on: <earlier features or contracts it uses, or "nothing">
+  - Done when:
+    - <concrete example: given this input or action, this exact output or behaviour>
+    - <one line per behaviour; each becomes a test>
+  - Not in this feature: <what to leave for later>
+```
+
+Rules for cards:
+- One feature fits one session: a handful of files and one clear behaviour. Split anything bigger.
+- No design decision is left to the builder. Every choice it would need (names, data shapes, libraries, error behaviour) is in the card or in `docs/ARCHITECTURE.md`.
+- "Done when" lines are examples, not adjectives: `POST /subscribe with a bad email returns 400 and {"error":"invalid email"}`, not `handles bad input well`.
+
+Before showing me the plan, re-read every card as a smaller model with no other context would. Wherever it would have to guess, fill the gap in, or move it to `## Open questions`.
 
 ## 2. Pick the extras
 
@@ -124,12 +145,14 @@ Both are user-invoked only: set the frontmatter so no agent triggers them on its
 
 ### `/feature`: build the next feature, never commit
 
+Set its frontmatter model to Sonnet; the feature cards are written so a smaller model can build them. `/ship` keeps the session model.
+
 1. Pick the first unchecked feature in the current phase of `docs/PLAN.md`, or the one named in the arguments. If every feature in the current phase is ticked, tell me to run `/ship` and stop.
 2. Run `git status`. Uncommitted changes are expected (earlier features of this phase). If anything uncommitted doesn't belong to this phase, stop and tell me.
-3. If the feature depends on anything under `## Open questions`, ask me, record the answer in the right doc, remove it from the list, and carry on.
+3. If the feature depends on anything under `## Open questions`, or its card leaves a design decision open, don't decide it yourself: ask me, record the answer in the card or the right doc, and carry on.
 4. Tell me in one or two lines which feature you're starting and what you'll change.
 5. Read only what the feature touches: the relevant part of `docs/ARCHITECTURE.md` (if it exists) and the nearest existing code. If it uses a third-party library, check its current docs first (Docs researcher extra).
-6. Write the tests first and nothing else, straight from the acceptance criteria. Run them and confirm each fails for the right reason.
+6. Write the tests first and nothing else: one or more per "Done when" line of the card. Run them and confirm each fails for the right reason.
 7. Write the least code that makes them pass, following `AGENTS.md`. Never edit a test to make it pass.
 8. Run `check` and fix every failure.
 9. Run the `ponytail-reviewer` on the files this feature touched. Remove every bloat item it reports, unless removing it would break the feature. In that case keep it and say why in one line.
@@ -229,7 +252,7 @@ Build only the ones picked in step 2.
 
 ## 12. Autopilot (Claude Code only, if picked in step 7)
 
-Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh agent (test-first, following `/feature`), verifies each one with an independent verifier plus both reviewers, gives failures up to two fix rounds, and stages each verified feature as a checkpoint. When the phase is done, it reviews the whole phase, proves the Gate, and commits once with `feat: <phase name>`. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
+Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh Sonnet agent (test-first, following `/feature`), verifies each one with an independent verifier plus both reviewers on the session model, gives failures two fix rounds on Sonnet and a final one on the session model, and stages each verified feature as a checkpoint. When the phase is done, it reviews the whole phase, proves the Gate, and commits once with `feat: <phase name>`. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
 
 1. Build the Correctness reviewer extra too, even if I didn't pick it; autopilot relies on it.
 2. Copy this skill's own `assets/autopilot.js` to `.claude/workflows/autopilot.js` without changes. Check the current docs for where saved workflows live and move it if needed.
