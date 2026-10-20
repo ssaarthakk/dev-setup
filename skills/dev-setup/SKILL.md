@@ -92,6 +92,14 @@ The core setup (sections 3 to 10) is always built. The 16 extras in section 11 a
 
 Before asking, say in two or three lines which extras you recommend for this project and why. For example: a small static site doesn't need the correctness reviewer, Docs researcher or Pinned toolchain; a multi-language app with external APIs should get nearly all of them. Build only the extras I pick, and leave out every line in the core sections that only applies to an extra I didn't pick.
 
+### 2b. Scope skills and stack reviewers
+
+Read `references/skill-catalog.md` in this skill's folder. Tag each feature card with its scopes (frontend, backend, data, mobile, AI, infra, integration) and match them against the catalog and the stack in the docs. Then ask me in one more round:
+- **Scope skills:** one or two multi-select questions with the matching skills, each described by the features that need it. Recommend all of them; skip the question if nothing matches.
+- **Stack reviewers:** one multi-select question with the matching reviewers from the catalog, at most two recommended.
+
+Add the ones I pick as the catalog says. Never add a skill or reviewer that isn't in the catalog; if the stack has no match, say so in the report instead.
+
 ## 3. Repo basics
 
 - `git init -b main` if needed.
@@ -139,6 +147,10 @@ Keep `AGENTS.md` short; it loads every session. Start with one line on what the 
 - Never read or edit `.env*` files or `*playbook*` files.
 - Add the project's own security needs (for example `rel="noopener noreferrer"` on external links, security headers for the host).
 
+**Skills** (only if step 2b added any)
+- One line per added skill, as the catalog says.
+- These skills are guidance. Where one conflicts with this file, this file wins: their examples have comments, and their git and testing advice differs.
+
 ## 5. Project skills in `.claude/skills/`
 
 Both are user-invoked only: set the frontmatter so no agent triggers them on its own.
@@ -151,13 +163,13 @@ Set its frontmatter model to Sonnet; the feature cards are written so a smaller 
 2. Run `git status`. Uncommitted changes are expected (earlier features of this phase). If anything uncommitted doesn't belong to this phase, stop and tell me.
 3. If the feature depends on anything under `## Open questions`, or its card leaves a design decision open, don't decide it yourself: ask me, record the answer in the card or the right doc, and carry on.
 4. Tell me in one or two lines which feature you're starting and what you'll change.
-5. Read only what the feature touches: the relevant part of `docs/ARCHITECTURE.md` (if it exists) and the nearest existing code. If it uses a third-party library, check its current docs first (Docs researcher extra).
+5. Read only what the feature touches: the relevant part of `docs/ARCHITECTURE.md` (if it exists), the skills in `AGENTS.md` that cover it, and the nearest existing code. If it uses a third-party library, check its current docs first (Docs researcher extra).
 6. Write the tests first and nothing else: one or more per "Done when" line of the card. Run them and confirm each fails for the right reason.
 7. Write the least code that makes them pass, following `AGENTS.md`. Never edit a test to make it pass.
 8. Run `check` and fix every failure.
 9. Run the `ponytail-reviewer` on the files this feature touched. Remove every bloat item it reports, unless removing it would break the feature. In that case keep it and say why in one line.
 10. Test audit (extra): delete any test that wouldn't fail if its behaviour broke, duplicates another test, or tests trivial code.
-11. Run the `correctness-reviewer` (extra) on the same files and fix every must-fix item.
+11. Run the `correctness-reviewer` (extra) and any stack reviewers (step 2b) on the same files and fix every must-fix item.
 12. Run `check` again.
 13. If the feature changed the structure, contracts or services, update `docs/ARCHITECTURE.md`. Tick the feature in `docs/PLAN.md`.
 14. Give a short summary: what changed, which files, which tests, what the reviewers changed. If that was the last feature of the phase, tell me to run `/ship`. Otherwise tell me to start a fresh session and run `/feature`. Do not commit.
@@ -168,7 +180,7 @@ Stop and report at the first step that fails.
 1. Every feature in the current phase must be ticked. If not, list the unticked ones and stop.
 2. Run `check`. Fix every failure.
 3. Show the phase's Gate passing, then ask me to confirm. Stop if I don't.
-4. Run the `ponytail-reviewer` (and the `correctness-reviewer`, if present) on all uncommitted changes together, looking for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Fix what they report, then run `check` again.
+4. Run the `ponytail-reviewer` (and the `correctness-reviewer` and stack reviewers, if present) on all uncommitted changes together, looking for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Fix what they report, then run `check` again.
 5. Make sure `docs/ARCHITECTURE.md` (if it exists) matches the code.
 6. Add the phase's user-visible changes under `[Unreleased]` in `CHANGELOG.md` (extra).
 7. Mark the phase heading in `docs/PLAN.md` with `(shipped)`.
@@ -220,7 +232,7 @@ If there's nothing to remove, it says `No bloat found.` and nothing else. No sty
 ## 10. Commit and report
 
 1. Stage everything and commit with exactly `chore: add dev setup`. No body, no trailers. Do not push.
-2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1, or `/autopilot` if it was added.
+2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the scope skills and stack reviewers added (with their sources), the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1, or `/autopilot` if it was added.
 
 ## 11. Extras
 
@@ -255,7 +267,7 @@ Build only the ones picked in step 2.
 Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh Sonnet agent (test-first, following `/feature`), verifies each one with an independent verifier plus both reviewers on the session model, gives failures two fix rounds on Sonnet and a final one on the session model, and stages each verified feature as a checkpoint. When the phase is done, it reviews the whole phase, proves the Gate, and commits once with `feat: <phase name>`. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
 
 1. Build the Correctness reviewer extra too, even if I didn't pick it; autopilot relies on it.
-2. Copy this skill's own `assets/autopilot.js` to `.claude/workflows/autopilot.js` without changes. Check the current docs for where saved workflows live and move it if needed.
+2. Copy this skill's own `assets/autopilot.js` to `.claude/workflows/autopilot.js`. Change only its `REVIEWERS` list, to every reviewer in `.claude/agents/` (stack reviewers included). Check the current docs for where saved workflows live and move it if needed.
 3. Create the user-invoked skill `.claude/skills/autopilot/SKILL.md`, with an optional number of phases as its argument:
    1. Run `git status` and read `docs/PLAN.md`. Tell me which phase it will start from, how many features are left, and how many phases it will run (all remaining ones if no number was given).
    2. Remind me that it runs unattended: start Claude Code in a permission mode that won't stop for approvals (auto mode), and keep the machine awake. It commits each phase locally and never pushes.
