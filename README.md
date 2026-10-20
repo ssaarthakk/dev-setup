@@ -29,11 +29,17 @@ Run it with `/dev-setup:dev-setup <plan>`.
 npx skills add ssaarthakk/dev-setup
 ```
 
-Add `-g` to install it for all your projects, and `-a <agent>` to pick the agent (for example `-a claude-code -a codex -a cursor`).
+Add `-g` to install it for all your projects, and `-a <agent>` to pick the agent (for example `-a claude-code -a codex -a cursor`). Install all four skills: dev-setup copies the website ones into projects that need them.
+
+The website skills also work on their own, in any existing project:
+
+```
+npx skills add ssaarthakk/dev-setup --skill web-taste launch-check
+```
 
 **Manual**
 
-Copy `skills/dev-setup/` into your agent's skills folder. For Claude Code, that's `~/.claude/skills/dev-setup/` (all projects) or `.claude/skills/dev-setup/` (one project). Run it with `/dev-setup <plan>`.
+Copy the folders in `skills/` into your agent's skills folder. For Claude Code, that's `~/.claude/skills/dev-setup/` (all projects) or `.claude/skills/dev-setup/` (one project). Run it with `/dev-setup <plan>`.
 
 ## How it works
 
@@ -41,9 +47,10 @@ Copy `skills/dev-setup/` into your agent's skills folder. For Claude Code, that'
 2. **Completes it with you.** It fills structural gaps itself (phases, acceptance criteria, gates), picks marked defaults for cheap technical choices, and asks you about everything else in short rounds. It never invents product, money, legal or privacy decisions; anything still unknown becomes an open question that `/feature` won't build past.
 3. **Writes the project's own docs**: `docs/PLAN.md` always, plus `ARCHITECTURE.md` and `PROJECT.md` when the project is big enough to need them. Your original plan is never edited, and it is gitignored if it sits in the project folder.
 4. **Lets you pick extras** from a 16-item checklist, with a recommendation based on how complex the project is.
-5. **Builds the setup** for your stack, from rules to CI.
-6. **Verifies it**: installs, runs the checks, and tests every hook once.
-7. **Commits** `chore: add dev setup`. It never pushes.
+5. **Matches skills to the plan.** It tags every feature with its scope (frontend, backend, data, mobile, AI, infra) and offers only the vetted third-party skills and stack reviewers those features need, pinned to a commit. Websites get the website pack.
+6. **Builds the setup** for your stack, from rules to CI.
+7. **Verifies it**: installs, runs the checks, and tests every hook once.
+8. **Commits** `chore: add dev setup`. It never pushes.
 
 After that, the loop is simple:
 
@@ -89,6 +96,26 @@ For each phase, autopilot builds every feature in a fresh Sonnet agent, test-fir
 | File size guard | `/adr` decision records | Pinned toolchain (mise) | LICENSE + SECURITY.md |
 | Git pre-commit hooks | `/fix-ci` | Test audit step | `CLAUDE.local.md` |
 
+### Matched to the plan
+
+Nothing is added because it's popular; each skill must be needed by a feature in your plan. Third-party skills come from [`references/skill-catalog.md`](skills/dev-setup/references/skill-catalog.md): pinned commits, read in full before copying, and dropped if they fetch unpinned content, run scripts, install hooks, or tell the agent to commit or skip tests. `AGENTS.md` always wins over them.
+
+| | From |
+|---|---|
+| Scope skills: accessibility, framework patterns, API design, security, Postgres, migrations, Claude API, Docker and more | [ECC](https://github.com/affaan-m/ECC), [Anthropic](https://github.com/anthropics/skills), [Vercel](https://github.com/vercel-labs/agent-skills), [Superpowers](https://github.com/obra/superpowers), [api-anything](https://github.com/goodnight000/api-anything) |
+| Stack reviewers (extra): TypeScript, React, Vue, Python, Go, Rust, Java, database, security | [ECC](https://github.com/affaan-m/ECC), made read-only and bound to your rules |
+
+### Website pack
+
+When the plan has a UI people see:
+
+| | |
+|---|---|
+| [`web-taste`](skills/web-taste/SKILL.md) | Bans the patterns that make a site look AI-generated (em dashes, emojis, Inter and Geist, glow orbs, bento grids, three cards in a row, purple on black and more), and requires real demos, skeleton loaders, legal pages and real proof. A script in `check` catches what it can; a `design-reviewer` agent checks the rest. The owner can allow any item per project |
+| [`launch-check`](skills/launch-check/SKILL.md) | A final Launch phase whose gate crawls the production preview: template titles, placeholders, source maps, bundle size, and for public sites server-rendered pages, titles, descriptions, canonicals, one `h1`, share images, alt text, sitemap, robots.txt, llms.txt, favicon, custom 404, structured data and internal links. Plus a console-error test |
+| Design skills | [impeccable](https://github.com/pbakaus/impeccable) and [Emil Kowalski's](https://github.com/emilkowalski/skills) by default, [frontend-design](https://github.com/anthropics/skills) or [taste-skill](https://github.com/Leonxlnx/taste-skill) as alternatives |
+| [`ui-sources`](skills/ui-sources/SKILL.md) | For React + Tailwind + shadcn: Motion Primitives, Kokonut UI, bklit UI, Magic UI, Animate UI and Watermelon UI, brought in clean (no comments, no demo code, no unapproved dependencies) |
+
 ## Big model plans, small model builds
 
 The expensive thinking happens once. During setup, your session model (for example Opus) makes every design decision and writes each feature as a self-contained card: the files it touches, what it builds on, concrete "done when" examples that become tests, and what's out of scope. It then re-reads every card as a smaller model would, and fills in anything that model would have to guess.
@@ -108,7 +135,17 @@ After that:
 - **No comments in code.** Names and structure explain the code.
 - **Agents never push.** You decide when code leaves your machine.
 
-Want different defaults? Fork it and edit [`skills/dev-setup/SKILL.md`](skills/dev-setup/SKILL.md). It's plain Markdown.
+Want different defaults? Fork it and edit [`skills/dev-setup/SKILL.md`](skills/dev-setup/SKILL.md). It's plain Markdown. The checker scripts are tested with `node --test test/*.test.mjs`.
+
+## Make your skills learn
+
+dev-setup doesn't add [task-observer](https://github.com/rebelytics/one-skill-to-rule-them-all) to projects, because it runs in every session. Install it once for yourself and it will turn friction it sees in `/feature`, `/ship` and the rest into proposed skill improvements that you review:
+
+```
+npx skills add rebelytics/one-skill-to-rule-them-all --skill task-observer -g
+```
+
+Then add its activation line to your user `CLAUDE.md`, as its README explains; installing alone doesn't switch it on.
 
 ## Writing a plan
 

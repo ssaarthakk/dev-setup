@@ -2,7 +2,7 @@
 
 Use this when the plan has a UI that people see: a website, web app, dashboard or landing page.
 
-The pack's skills live next to this skill, in `../web-taste/` and `../launch-check/`. If they aren't there (only dev-setup was installed), fetch them from `skills/` in `github.com/ssaarthakk/dev-setup` at the commit this skill came from, or `main` if you can't tell.
+The pack's skills are sibling folders of this skill's folder: `web-taste`, `launch-check` and `ui-sources`. If they aren't there (only dev-setup was installed), fetch them from `skills/` in `github.com/ssaarthakk/dev-setup` at the commit this skill came from, or `main` if you can't tell.
 
 Copy each one to `.claude/skills/<name>/` unchanged. Exclude `.claude/skills/` from the formatter, linter and unused-code tools: those files are vendored, not project code.
 
@@ -43,7 +43,7 @@ Offer these for public sites and product UI where the look matters, not for plai
 
 In the step 2b round, ask:
 - **Design skills** (multi-select, from the catalog's design table): impeccable and `emil-design-eng` recommended, `review-animations` if the plan has meaningful motion, `frontend-design` and `taste-skill` as alternatives. Describe impeccable's binary and hook in its option.
-- **UI registries** (multi-select), only for React + Tailwind + shadcn stacks: the registries in `../ui-sources/SKILL.md`, recommended where the plan's features need them (charts: bklit UI; text and reveal motion: Motion Primitives; marketing sections: Kokonut UI or Magic UI).
+- **UI registries** (multi-select), only for React + Tailwind + shadcn stacks: the registries in the `ui-sources` skill, recommended where the plan's features need them (charts: bklit UI; text and reveal motion: Motion Primitives; marketing sections: Kokonut UI or Magic UI).
 
 For picked registries:
 1. Copy `ui-sources`.
