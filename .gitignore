@@ -1,0 +1,5 @@
+01-setup-dev-environment*.md
+*playbook*.md
+.env*
+.DS_Store
+Thumbs.db

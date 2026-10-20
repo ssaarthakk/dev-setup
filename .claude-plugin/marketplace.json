@@ -1,0 +1,12 @@
+{
+  "name": "dev-setup-marketplace",
+  "description": "Turn a project plan into a full dev setup and first commit",
+  "owner": { "name": "Sarthak Kumar" },
+  "plugins": [
+    {
+      "name": "dev-setup",
+      "source": "./",
+      "description": "Read a project plan and set up rules, skills, reviewers, hooks and CI for it, then make the first commit"
+    }
+  ]
+}
