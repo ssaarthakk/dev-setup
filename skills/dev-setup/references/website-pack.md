@@ -36,3 +36,18 @@ Gate: `check-launch.mjs` passes against the production preview (with `--public` 
 To run it: if the project has Playwright, put both in one end-to-end file that uses Playwright's `webServer` to start the production preview. One test asserts that `checkSite(baseURL, options)`, imported from `.claude/skills/launch-check/scripts/check-launch.mjs`, returns no problems; the other is the console-error test. Without Playwright, add a `check:launch` script that builds, starts the preview, runs the script and stops the preview.
 
 Add to `AGENTS.md`: `Launch readiness follows .claude/skills/launch-check/SKILL.md.`
+
+## Design and components: when the look matters
+
+Offer these for public sites and product UI where the look matters, not for plain internal tools.
+
+In the step 2b round, ask:
+- **Design skills** (multi-select, from the catalog's design table): impeccable and `emil-design-eng` recommended, `review-animations` if the plan has meaningful motion, `frontend-design` and `taste-skill` as alternatives. Describe impeccable's binary and hook in its option.
+- **UI registries** (multi-select), only for React + Tailwind + shadcn stacks: the registries in `../ui-sources/SKILL.md`, recommended where the plan's features need them (charts: bklit UI; text and reveal motion: Motion Primitives; marketing sections: Kokonut UI or Magic UI).
+
+For picked registries:
+1. Copy `ui-sources`.
+2. List the picked registries under an `Approved UI registries` heading in `docs/ARCHITECTURE.md`, and add `shadcn` (pinned) and `motion` to the approved dependencies.
+3. Add to `AGENTS.md`: `New UI components come from the approved registries, following .claude/skills/ui-sources/SKILL.md.`
+
+Animation libraries, added to the approved dependencies only when a feature needs them: Motion (motion.dev) by default, anime.js for long timeline sequences, three.js (or React Three Fiber in React) for real 3D.

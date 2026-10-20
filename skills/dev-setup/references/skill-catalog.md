@@ -28,6 +28,8 @@ Third-party skills and reviewers that dev-setup may add to a project. Offer one 
 | vercel | `vercel-labs/agent-skills` | `063bee94c3f4df8453406c830b0a7df0f2860278` | MIT |
 | superpowers | `obra/superpowers` | `bb92a77741419a4ab5f06e711a283343f1ada0c3` | MIT |
 | api-anything | `goodnight000/api-anything` | `daca03ac08238a91e22c53085c6d0c01310fc56b` | MIT |
+| emil | `emilkowalski/skills` | `2d228630ba1446365f614a108cb8252f1feda202` | MIT |
+| taste | `Leonxlnx/taste-skill` | `63aba5f43b5056758b15bbe7d683da8c86a7a7ad` | MIT |
 
 Paths are `skills/<name>` unless the table says otherwise.
 
@@ -60,6 +62,24 @@ Paths are `skills/<name>` unless the table says otherwise.
 | Infra | `docker-patterns` | ecc | The project ships or runs in containers |
 | Infra | `deployment-patterns` | ecc | Self-hosted deploys (not a managed host like Vercel or Netlify) |
 | Integration | `api-anything` | api-anything | A feature needs data from a website with no API. Note the site's terms of service in `docs/PLAN.md` |
+
+## Design skills (website pack)
+
+Offered only through `website-pack.md`. `web-taste` overrides all of them.
+
+| Skill | Source | Pick when |
+|---|---|---|
+| `impeccable` | `pbakaus/impeccable`, npm `impeccable@4.7.0` (Apache-2.0) | Default for any site where the look matters. Not copied: see below |
+| `emil-design-eng` | emil | Default, alongside impeccable: interaction and polish details |
+| `review-animations` | emil | The plan has meaningful motion (page transitions, animated components) |
+| `frontend-design` | anthropic | Instead of impeccable, when I decline its binary and hook |
+| `taste-skill` | taste | Art direction from reference images. Only if I pick it; it overlaps impeccable |
+
+impeccable is the one approved exception to the no-scripts, no-hooks rule. Its skill runs a launcher that downloads a pinned native binary into `~/.impeccable/bin/` on first use, and its installer adds a design-detector hook that runs after UI edits. Install it with its own installer, never by copying:
+```
+npx impeccable@4.7.0 install --scope=project --providers=<the agents I use, for example claude,codex,cursor>
+```
+Say all of that in the question that offers it. The binary cache lives outside the repo. Commit what the installer writes into the project (its skill folders and hook config), and exclude those folders from the formatter, linter and unused-code tools. When impeccable asks for product context, point it to `docs/PROJECT.md` instead of repeating it.
 
 ## Stack reviewers (extra)
 
