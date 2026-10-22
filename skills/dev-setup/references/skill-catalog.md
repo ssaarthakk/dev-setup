@@ -15,9 +15,9 @@ Third-party skills and reviewers that dev-setup may add to a project. Offer one 
    - runs bundled scripts or downloads binaries, unless I approve that skill by name;
    - installs hooks, MCP servers or background processes;
    - tells the agent to commit, push, add dependencies, or skip tests.
-3. Copy the folder to `.claude/skills/<name>/`, plus the source repo's license file as `LICENSE` if the folder has none.
-4. Add one line to the `AGENTS.md` skills list: ``- `.claude/skills/<name>/`: <when to read it> (<repo>@<first 7 of commit>, <license>)``.
-5. If the project has path-scoped rule files, add `Read .claude/skills/<name>/SKILL.md first.` to the rule file for the paths it covers.
+3. Copy the folder to `.agents/skills/<name>/`, plus the source repo's license file as `LICENSE` if the folder has none. Add its Claude stub as in section 5 of dev-setup.
+4. Add one line to the `AGENTS.md` skills list: ``- `.agents/skills/<name>/`: <when to read it> (<repo>@<first 7 of commit>, <license>)``.
+5. If the project has path-scoped rule files, add `Read .agents/skills/<name>/SKILL.md first.` to the rule file for the paths it covers.
 
 ## Sources
 

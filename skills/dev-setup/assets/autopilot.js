@@ -117,7 +117,7 @@ while (run.length < MAX_PHASES) {
     const label = `p${run.length} ${index + 1}/${plan.features.length}`
     const subject = `the feature "${feature}"`
     const built = await agent(
-      `${UNATTENDED} Never commit. Build this feature from docs/PLAN.md: "${feature}". ${FEATURE_SCOPE} Its card in docs/PLAN.md says what to touch and when it is done. Follow .claude/skills/feature/SKILL.md, with three changes: skip its reviewer and test audit steps, because independent agents run them after you; do not stage anything; and if the feature depends on an open question, its card leaves a design decision open, or you would need to ask the user anything, stop before writing code and return blocked with the exact question. Return done only when the tests were written first and failed for the right reason, they now pass, the check script passes, and the feature is ticked in docs/PLAN.md.`,
+      `${UNATTENDED} Never commit. Build this feature from docs/PLAN.md: "${feature}". ${FEATURE_SCOPE} Its card in docs/PLAN.md says what to touch and when it is done. Follow .agents/skills/feature/SKILL.md, with three changes: skip its reviewer and test audit steps, because independent agents run them after you; do not stage anything; and if the feature depends on an open question, its card leaves a design decision open, or you would need to ask the user anything, stop before writing code and return blocked with the exact question. Return done only when the tests were written first and failed for the right reason, they now pass, the check script passes, and the feature is ticked in docs/PLAN.md.`,
       { label: `build ${label}`, phase: 'Build', schema: BUILD, model: BUILD_MODEL },
     )
     if (!built || built.status !== 'done') {

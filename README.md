@@ -69,6 +69,17 @@ Or let it run overnight (Claude Code):
 
 For each phase, autopilot builds every feature in a fresh Sonnet agent, test-first. It has each one checked by an independent verifier plus both reviewers on your session model, gives failures two fix rounds on Sonnet and a last one on your session model, and stages each verified feature as a checkpoint. Then it reviews the whole phase, proves its gate, and makes the phase's one commit before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
 
+## Switching agents
+
+Set it up in Claude Code and build in Codex, OpenCode or any other agent. The rules and skills already work across agents. To give the new agent its own hooks and reviewers too, run dev-setup there with `port <agent>`:
+
+```
+$dev-setup port codex
+/dev-setup port opencode
+```
+
+It reads the agent's docs and maps each part: the same hook scripts registered in its hook config (or wrapped in one small plugin, for OpenCode), each reviewer as a subagent that points at its `.claude/agents/` file, and skills from older setups moved to `.agents/skills/`. Then it commits `chore: port setup to <agent>`. `.claude/` stays, so Claude Code keeps working. `/autopilot` and `settings.json` permissions stay Claude Code only.
+
 ## What you get
 
 ### Always
@@ -78,6 +89,7 @@ For each phase, autopilot builds every feature in a fresh Sonnet agent, test-fir
 | `AGENTS.md` + `CLAUDE.md` | One rules file every agent reads (`CLAUDE.md` imports it): KISS, DRY, no comments in code, no unasked dependencies, test-first, commit format, security |
 | `docs/PLAN.md` | Your completed plan, as phases of feature cards a smaller model can build from, a gate per phase, and open questions |
 | `docs/ARCHITECTURE.md`, `docs/PROJECT.md` | Stack and contracts, and product background, split out only when the project is big enough to need them |
+| `.agents/skills/` | Project skills in the shared folder Codex and other agents read, with a one-line stub in `.claude/skills/` for Claude Code |
 | `/feature` | Picks the next feature, writes failing tests first, implements, runs checks and reviews, ticks it off |
 | `/ship` | Proves the phase gate, reviews the whole phase, makes one commit |
 | `ponytail-reviewer` | Read-only reviewer that only hunts bloat: unused code, duplication, over-engineering, comments |

@@ -1,18 +1,20 @@
 ---
 name: dev-setup
-description: Read a project plan, complete it with the user, turn it into project docs, and set up the dev environment for it (rules, skills, reviewers, hooks, CI, chosen extras), then make the first commit. Run in the new, empty project folder.
+description: Read a project plan, complete it with the user, turn it into project docs, and set up the dev environment for it (rules, skills, reviewers, hooks, CI, chosen extras), then make the first commit. Run in the new, empty project folder. Or run with `port <agent>` in a project it already set up, to add that agent's native hooks and subagents.
 license: MIT
 disable-model-invocation: true
-argument-hint: <path or URL to the project plan>
+argument-hint: <path or URL to the project plan> | port <agent>
 ---
 
 # Dev setup from a project plan
 
 Plan: `$ARGUMENTS`
 
+If the arguments start with `port`, skip straight to section 13.
+
 This is setup only. Build no product code beyond the smallest placeholder the checks need to run on.
 
-This skill works in any agent that supports Agent Skills. The project it sets up works for every agent too: the rules go in `AGENTS.md`, which most coding agents read, and `CLAUDE.md` imports it. The `.claude/` folder adds Claude Code's hooks, subagents and settings on top. Git hooks and CI enforce the same rules no matter which agent wrote the code.
+This skill works in any agent that supports Agent Skills. The project it sets up works for every agent too: the rules go in `AGENTS.md`, which most coding agents read, and `CLAUDE.md` imports it. Project skills go in `.agents/skills/`, which Codex and other agents read, with a stub in `.claude/skills/` for Claude Code. The `.claude/` folder adds Claude Code's hooks, subagents and settings on top, and section 13 ports them to another agent later. Git hooks and CI enforce the same rules no matter which agent wrote the code.
 
 Whenever this skill says "ask me", use your structured question tool if you have one (AskUserQuestion in Claude Code). Otherwise, ask in plain text as a numbered list I can answer by number. Put your recommended answer first.
 
@@ -107,7 +109,7 @@ If the website pack applies (step 1d), its questions go in this round too, and y
 ## 3. Repo basics
 
 - `git init -b main` if needed.
-- Folders: the source folder(s) the stack needs, `docs/`, `.claude/`, `.github/`.
+- Folders: the source folder(s) the stack needs, `docs/`, `.agents/`, `.claude/`, `.github/`.
 - `.gitignore`: the stack's build and dependency folders, `.env*` except `.env.example`, OS files, `*playbook*.md`, `CLAUDE.local.md`.
 - `.editorconfig` with sensible defaults.
 - Short `README.md`: what the repo is, how to install, how to run the checks, how to deploy.
@@ -137,7 +139,7 @@ Keep `AGENTS.md` short; it loads every session. Start with one line on what the 
 **Workflow**
 - Work follows `docs/PLAN.md`. Build one feature at a time with `/feature`.
 - When every feature in a phase is ticked, run `/ship`. It makes exactly one commit for the whole phase. Never commit or push outside `/ship` (or the ship step of `/autopilot`, if this project has it).
-- The steps for `/feature` and `/ship` are in `.claude/skills/feature/SKILL.md` and `.claude/skills/ship/SKILL.md`. If your agent has no slash commands, read that file and follow it when asked to build a feature or ship a phase. Do the same for the reviewers in `.claude/agents/`: when a step says to run a reviewer, apply its file as a review checklist.
+- The steps for `/feature` and `/ship` are in `.agents/skills/feature/SKILL.md` and `.agents/skills/ship/SKILL.md`. If your agent has no slash commands, read that file and follow it when asked to build a feature or ship a phase. Do the same for the reviewers in `.claude/agents/`: when a step says to run a reviewer, apply its file as a review checklist.
 - Run `check` before saying anything is done.
 - When a requirement is unclear, ask. Don't guess. Never build on an item in `## Open questions`; ask me to answer it first.
 
@@ -155,13 +157,15 @@ Keep `AGENTS.md` short; it loads every session. Start with one line on what the 
 - One line per added skill, as the catalog says.
 - These skills are guidance. Where one conflicts with this file, this file wins: their examples have comments, and their git and testing advice differs.
 
-## 5. Project skills in `.claude/skills/`
+## 5. Project skills in `.agents/skills/`
 
-Both are user-invoked only: set the frontmatter so no agent triggers them on its own.
+Every project skill, including the extras and the vendored skills from step 2b, lives once in `.agents/skills/<name>/`, the shared folder Codex and other agents read. Claude Code reads only `.claude/skills/`, so give each skill a stub at `.claude/skills/<name>/SKILL.md`: the same `name` and `description`, Claude Code's own frontmatter fields, and a body of one line: `Read and follow .agents/skills/<name>/SKILL.md.` No symlinks and no copies. The only exception is `/autopilot`, which is Claude Code only and lives in `.claude/skills/` alone.
+
+`/feature` and `/ship` are user-invoked only: set the frontmatter so no agent triggers them on its own, in the Claude stub and, for agents that support it, in the shared skill (check their docs).
 
 ### `/feature`: build the next feature, never commit
 
-Set its frontmatter model to Sonnet; the feature cards are written so a smaller model can build them. `/ship` keeps the session model.
+Set the Claude stub's model to Sonnet; the feature cards are written so a smaller model can build them. `/ship` keeps the session model.
 
 1. Pick the first unchecked feature in the current phase of `docs/PLAN.md`, or the one named in the arguments. If every feature in the current phase is ticked, tell me to run `/ship` and stop.
 2. Run `git status`. Uncommitted changes are expected (earlier features of this phase). If anything uncommitted doesn't belong to this phase, stop and tell me.
@@ -232,11 +236,12 @@ If there's nothing to remove, it says `No bloat found.` and nothing else. No sty
 1. Install dependencies, then run `check`. Everything must pass.
 2. Test each hook once by piping sample input into it, and confirm it blocks, formats or reports as expected.
 3. Run `git status`. Make sure no `.env*`, playbook, `CLAUDE.local.md` or gitignored file would be staged.
+4. Check that every skill in `.agents/skills/` has a Claude stub, and every stub points at a file that exists.
 
 ## 10. Commit and report
 
 1. Stage everything and commit with exactly `chore: add dev setup`. No body, no trailers. Do not push.
-2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the scope skills and stack reviewers added (with their sources), the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1, or `/autopilot` if it was added.
+2. Report: the docs written and what went in each, the defaults you picked, the open questions left, the extras built, the scope skills and stack reviewers added (with their sources), the file tree with one line on what each file does, and the commit hash. Then tell me to run `/feature` to start Phase 1, or `/autopilot` if it was added. Add that if I switch to another agent, running this skill there with `port <agent>` gives it the hooks and reviewers too.
 
 ## 11. Extras
 
@@ -278,3 +283,24 @@ Autopilot builds the plan unattended, phase by phase. For each phase it builds e
    3. Run the saved workflow `autopilot` with the Workflow tool, passing `{ "phases": <number> }` as args when a number was given.
    4. When it returns, report each phase's commit and features, why it stopped, and anything in `git stash list` from this run. Tell me the next step: review the commits and push, or resolve the reported problem and run `/autopilot` again.
 4. Add one line to `AGENTS.md`: `/autopilot` builds and commits whole phases unattended; never run it unless I ask.
+
+## 13. Port to another agent (`port <agent>`)
+
+Run this from the agent you're porting to (Codex, OpenCode, Cursor, Gemini CLI, GitHub Copilot or any other), in a project this skill already set up. It maps each Claude Code part to that agent's native equivalent and keeps `.claude/` as it is, so both agents keep working. Where the agent has no equivalent, skip that part and say so in the report.
+
+1. If `AGENTS.md` or `.claude/` is missing, stop and tell me to run the setup first. Run `git status`. Uncommitted work from a phase in progress is fine, but if a file this port needs to change has uncommitted changes, stop and tell me.
+2. Check the agent's current official docs for its rules file, skill folders, subagents, hooks or plugins, and project config before writing any of them. For example, today Codex reads `.agents/skills/`, takes subagents as TOML in `.codex/agents/` and hooks in `.codex/hooks.json`; OpenCode reads `.claude/skills/` and `.agents/skills/`, and takes subagents as Markdown and hooks as JS plugins under `.opencode/`.
+3. **Rules:** if the agent doesn't read `AGENTS.md` on its own, point it there the way `CLAUDE.md` does: its own rules file importing or naming `AGENTS.md`, or a config setting. Never copy the rules.
+4. **Skills:** projects set up by an older version keep their skills only in `.claude/skills/`. Move each one except `autopilot` to `.agents/skills/<name>/` and leave a Claude stub, as in section 5. Update every reference to the old paths: `AGENTS.md`, `docs/`, rule files, scripts and tool config. If the agent reads neither folder, give each skill a stub in the agent's own skill folder, like the Claude stubs.
+5. **Reviewers:** for each `.claude/agents/<name>.md`, add the agent's own subagent with the same name and description, read-only, whose instructions are one line: `Read and follow .claude/agents/<name>.md. Never edit files.` Don't copy the checklist; one copy can't drift. Agents without subagents already apply the reviewer files as checklists, through `AGENTS.md`.
+6. **Hooks:** the logic stays in `.claude/hooks/`. Write only the glue the agent needs:
+   - If it runs command hooks with Claude Code's JSON input and output (Codex today), register the same scripts in its hook config under the matching events, with their paths resolved from the git root.
+   - If it runs hooks as plugins (OpenCode today), write one small plugin that, on each matching event, runs the same script with Claude Code-shaped JSON on stdin, and blocks with the script's stderr when it exits with code 2.
+   - If it reports file edits differently, make the scripts read that too. For example, Codex edits through `apply_patch`, so its paths are in the `*** Add File:` and `*** Update File:` lines of the patch in `tool_input.command`, not in `tool_input.file_path`.
+   - Make blocking hooks block with exit code 2 and the reason on stderr; Claude Code and Codex both accept that, and Codex's Stop hook allows only JSON on stdout at exit 0.
+   - If the agent has no hooks, skip them; Git pre-commit hooks and CI still enforce the rules.
+   Test each hook once with a Claude Code sample input and once through the new agent's glue, as in section 9.
+7. **MCP servers:** if `.mcp.json` lists any, ask me in one multi-select question which to add to the agent's project config.
+8. **Not ported:** `.claude/settings.json` permissions (the hooks and Git pre-commit hooks still block the dangerous commands), `/autopilot` (needs Claude Code's Workflow tool), and `CLAUDE.local.md`. Path-scoped rule files already reach other agents through their lines in `AGENTS.md`.
+9. Run `check`. Stage only the files this port added or changed, and commit with exactly `chore: port setup to <agent>`. No body, no trailers. Do not push.
+10. Report what was ported and where, what wasn't and why, and the commit hash. Tell me if the agent needs me to trust the project or approve its new hooks before they run (in Codex: trust the project, then `/hooks`).
