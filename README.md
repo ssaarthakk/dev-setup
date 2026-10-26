@@ -55,9 +55,9 @@ Copy the folders in `skills/` into your agent's skills folder. For Claude Code, 
 After that, the loop is simple:
 
 ```
-/feature   build the next unticked feature, test-first, reviewed, never committed
+/feature   build the next unticked feature, test-first, never committed
 /feature   ...
-/ship      phase done: gate passes, cross-feature review, one commit for the phase
+/ship      phase done: gate passes, whole-phase review, a few grouped commits
 ```
 
 Or let it run overnight (Claude Code):
@@ -67,7 +67,7 @@ Or let it run overnight (Claude Code):
 /autopilot 2    stop after two phases
 ```
 
-For each phase, autopilot builds every feature in a fresh Sonnet agent, test-first. It has each one checked by an independent verifier plus both reviewers on your session model, gives failures two fix rounds on Sonnet and a last one on your session model, and stages each verified feature as a checkpoint. Then it reviews the whole phase, proves its gate, and makes the phase's one commit before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
+For each phase, autopilot builds every feature in a fresh Sonnet agent, test-first, and stages each one as a checkpoint. Then an independent verifier plus every reviewer, all on Opus, check each feature against its card and the phase as a whole, and prove its gate. Failures get up to three fix rounds on Sonnet. Then it commits the phase as a few grouped commits before moving on. It stops at the first thing it can't finish cleanly: the failed attempt is parked in `git stash`, and nothing broken gets committed. It never pushes.
 
 ## Switching agents
 
@@ -91,7 +91,7 @@ It reads the agent's docs and maps each part: the same hook scripts registered i
 | `docs/ARCHITECTURE.md`, `docs/PROJECT.md` | Stack and contracts, and product background, split out only when the project is big enough to need them |
 | `.agents/skills/` | Project skills in the shared folder Codex and other agents read, with a one-line stub in `.claude/skills/` for Claude Code |
 | `/feature` | Picks the next feature, writes failing tests first, implements, runs checks and reviews, ticks it off |
-| `/ship` | Proves the phase gate, reviews the whole phase, makes one commit |
+| `/ship` | Proves the phase gate, reviews the whole phase, makes a few grouped commits |
 | `ponytail-reviewer` | Read-only reviewer that only hunts bloat: unused code, duplication, over-engineering, comments |
 | `.claude/settings.json` + hooks | Formats on save, blocks force-push, `reset --hard`, `--no-verify`, commit trailers, and any edit to `.env*` or private notes |
 | CI + Dependabot | Checks and a gitleaks secret scan on every push, actions pinned to commit SHAs, weekly updates |
@@ -136,14 +136,14 @@ After that:
 
 | Step | Model |
 |---|---|
-| `/dev-setup`, `/ship`, verification, reviewers | Your session model |
-| `/feature`, autopilot builds and first two fix rounds | Sonnet |
-| Autopilot's last fix round before giving up | Your session model |
+| `/dev-setup`, `/ship` and its reviewers | Your session model |
+| Autopilot verification and reviewers | Opus |
+| `/feature`, autopilot builds and fix rounds | Sonnet |
 
 ## Opinions baked in
 
 - **Test-first, no fake tests.** Every test must fail for the right reason before the feature exists, and tests are never edited just to make them pass.
-- **One commit per phase.** Commit messages are one line, `type: summary`, 50 characters or less, with no body and no co-author trailers.
+- **A few grouped commits per phase.** Commit messages are one line, `type: summary`, 50 characters or less, with no body and no co-author trailers.
 - **No comments in code.** Names and structure explain the code.
 - **Agents never push.** You decide when code leaves your machine.
 

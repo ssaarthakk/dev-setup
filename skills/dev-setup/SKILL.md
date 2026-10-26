@@ -138,7 +138,7 @@ Keep `AGENTS.md` short; it loads every session. Start with one line on what the 
 
 **Workflow**
 - Work follows `docs/PLAN.md`. Build one feature at a time with `/feature`.
-- When every feature in a phase is ticked, run `/ship`. It makes exactly one commit for the whole phase. Never commit or push outside `/ship` (or the ship step of `/autopilot`, if this project has it).
+- When every feature in a phase is ticked, run `/ship`. It reviews the whole phase and commits it as a few grouped commits. Never commit or push outside `/ship` (or the ship step of `/autopilot`, if this project has it).
 - The steps for `/feature` and `/ship` are in `.agents/skills/feature/SKILL.md` and `.agents/skills/ship/SKILL.md`. If your agent has no slash commands, read that file and follow it when asked to build a feature or ship a phase. Do the same for the reviewers in `.claude/agents/`: when a step says to run a reviewer, apply its file as a review checklist.
 - Run `check` before saying anything is done.
 - When a requirement is unclear, ask. Don't guess. Never build on an item in `## Open questions`; ask me to answer it first.
@@ -175,26 +175,25 @@ Set the Claude stub's model to Sonnet; the feature cards are written so a smalle
 6. Write the tests first and nothing else: one or more per "Done when" line of the card. Run them and confirm each fails for the right reason.
 7. Write the least code that makes them pass, following `AGENTS.md`. Never edit a test to make it pass.
 8. Run `check` and fix every failure.
-9. Run the `ponytail-reviewer` on the files this feature touched, and the `design-reviewer` (website pack) on its UI files. Remove every bloat item it reports, unless removing it would break the feature. In that case keep it and say why in one line.
-10. Test audit (extra): delete any test that wouldn't fail if its behaviour broke, duplicates another test, or tests trivial code.
-11. Run the `correctness-reviewer` (extra) and any stack reviewers (step 2b) on the same files and fix every must-fix item.
-12. Run `check` again.
-13. If the feature changed the structure, contracts or services, update `docs/ARCHITECTURE.md`. Tick the feature in `docs/PLAN.md`.
-14. Give a short summary: what changed, which files, which tests, what the reviewers changed. If that was the last feature of the phase, tell me to run `/ship`. Otherwise tell me to start a fresh session and run `/feature`. Do not commit.
+9. Test audit (extra): delete any test that wouldn't fail if its behaviour broke, duplicates another test, or tests trivial code, then run `check` again.
+10. If the feature changed the structure, contracts or services, update `docs/ARCHITECTURE.md`. Tick the feature in `docs/PLAN.md`.
+11. Give a short summary: what changed, which files, which tests. If that was the last feature of the phase, tell me to run `/ship`. Otherwise tell me to start a fresh session and run `/feature`. Do not commit.
 
-### `/ship`: commit the finished phase
+`/feature` runs no reviewers; `/ship` reviews the whole phase at once, which costs far fewer tokens than reviewing every feature.
+
+### `/ship`: review and commit the finished phase
 
 Stop and report at the first step that fails.
 1. Every feature in the current phase must be ticked. If not, list the unticked ones and stop.
 2. Run `check`. Fix every failure.
 3. Show the phase's Gate passing, then ask me to confirm. Stop if I don't.
-4. Run the `ponytail-reviewer` (and the `correctness-reviewer`, stack reviewers and `design-reviewer`, if present) on all uncommitted changes together, looking for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Fix what they report, then run `check` again.
+4. Run the reviewers on all uncommitted changes together: the `ponytail-reviewer`, plus the `correctness-reviewer`, stack reviewers and `design-reviewer` (on UI files) if present. Tell them to check each feature of the phase against its card (every "Done when" line has a test that would fail without it; nothing changed outside its "Touches"), and to look for what only shows across features: repeated code, drifted contracts, code a later feature made unused. Remove every bloat item unless that would break a feature (then keep it and say why in one line), fix every must-fix item, then run `check` again.
 5. Make sure `docs/ARCHITECTURE.md` (if it exists) matches the code.
 6. Add the phase's user-visible changes under `[Unreleased]` in `CHANGELOG.md` (extra).
 7. Mark the phase heading in `docs/PLAN.md` with `(shipped)`.
-8. Run `git status` and `git diff --stat`. Stage the phase's files. Never stage `.env*`, playbook files, `CLAUDE.local.md` or anything gitignored.
-9. Commit with one line: `feat: <phase name>`, max 50 characters. No body, no trailers.
-10. Show the commit hash and message. Do not push.
+8. Run `git status` and `git diff --stat`, and group the phase into a few commits: not one for the whole phase, not one per feature. Group features that belong together (for example a data layer, then the UI on top of it), usually two to four groups; a phase that is one small group gets one commit. Features that touch the same source file share a group, so no feature is split across commits. `docs/PLAN.md`, `CHANGELOG.md` and `docs/ARCHITECTURE.md` go in the last commit.
+9. Unstage everything with `git restore --staged .`, then for each group in plan order: stage only its files and commit with one line, `<type>: <summary>`, max 50 characters. No body, no trailers. Never stage `.env*`, playbook files, `CLAUDE.local.md` or anything gitignored.
+10. Show every commit's hash and message. Do not push.
 
 ## 6. Reviewer: `.claude/agents/ponytail-reviewer.md`
 
@@ -219,7 +218,7 @@ If there's nothing to remove, it says `No bloat found.` and nothing else. No sty
   - Before any shell command: block `git push --force`, `git push -f`, `git reset --hard`, `--no-verify`, `core.hooksPath` and `Co-Authored-By`, with a clear message.
   - Before any Edit or Write: block paths matching `.env*` (except `.env.example`) or `*playbook*`.
 - Plugins and MCP servers: list the ones the stack would benefit from (for example a payments plugin if the project takes payments). Ask me which to add in one multi-select question, and add only the ones I pick.
-- In the same round of questions, ask whether to add **Autopilot** (section 12): unattended, phase-by-phase building with a commit per phase, for example overnight. It needs Claude Code's Workflow tool. Recommend it for projects with more than one phase.
+- In the same round of questions, ask whether to add **Autopilot** (section 12): unattended, phase-by-phase building with grouped commits per phase, for example overnight. It needs Claude Code's Workflow tool. Recommend it for projects with more than one phase.
 
 ## 8. GitHub
 
@@ -263,7 +262,7 @@ Build only the ones picked in step 2.
 - **Path-scoped rule files:** move language and area rules out of `AGENTS.md` into `.claude/rules/<topic>.md` (for example `typescript.md`, `python.md`, `testing.md`), each scoped with `paths` frontmatter so Claude Code loads it only when matching files are touched. `AGENTS.md` keeps the rules that apply everywhere, plus one line per rule file saying which files it covers, so other agents read it before touching them.
 - **Size limits:** add to `AGENTS.md`: files ≤ 300 lines, functions ≤ 50 lines, ≤ 4 parameters; split by responsibility, not by type.
 - **Pinned toolchain:** a `mise.toml` pinning the runtime, package manager, gitleaks and lefthook versions. README install steps start with `mise install`.
-- **Test audit step:** keep step 10 of `/feature`.
+- **Test audit step:** keep step 9 of `/feature`.
 
 **Repo files**
 - **CHANGELOG via /ship:** a `CHANGELOG.md` in Keep a Changelog format with an empty `[Unreleased]` section, and keep step 6 of `/ship`.
@@ -273,7 +272,7 @@ Build only the ones picked in step 2.
 
 ## 12. Autopilot (Claude Code only, if picked in step 7)
 
-Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh Sonnet agent (test-first, following `/feature`), verifies each one with an independent verifier plus both reviewers on the session model, gives failures two fix rounds on Sonnet and a final one on the session model, and stages each verified feature as a checkpoint. When the phase is done, it reviews the whole phase, proves the Gate, and commits once with `feat: <phase name>`. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
+Autopilot builds the plan unattended, phase by phase. For each phase it builds every unticked feature in a fresh Sonnet agent (test-first, following `/feature`) and stages each one as a checkpoint. When the phase is built, an independent verifier plus every reviewer, all on Opus, check every feature against its card and the phase as a whole, and prove the Gate. Failures get up to three fix rounds on Sonnet. Then it commits the phase as a few grouped commits. Then it moves on to the next phase. It never pushes. It stops at the first feature or phase it can't finish cleanly: the failed attempt goes to `git stash`, earlier work stays staged, and nothing broken is committed.
 
 1. Build the Correctness reviewer extra too, even if I didn't pick it; autopilot relies on it.
 2. Copy this skill's own `assets/autopilot.js` to `.claude/workflows/autopilot.js`. Change only its `REVIEWERS` list, to every reviewer in `.claude/agents/` (stack reviewers included). Check the current docs for where saved workflows live and move it if needed.
@@ -281,7 +280,7 @@ Autopilot builds the plan unattended, phase by phase. For each phase it builds e
    1. Run `git status` and read `docs/PLAN.md`. Tell me which phase it will start from, how many features are left, and how many phases it will run (all remaining ones if no number was given).
    2. Remind me that it runs unattended: start Claude Code in a permission mode that won't stop for approvals (auto mode), and keep the machine awake. It commits each phase locally and never pushes.
    3. Run the saved workflow `autopilot` with the Workflow tool, passing `{ "phases": <number> }` as args when a number was given.
-   4. When it returns, report each phase's commit and features, why it stopped, and anything in `git stash list` from this run. Tell me the next step: review the commits and push, or resolve the reported problem and run `/autopilot` again.
+   4. When it returns, report each phase's commits and features, why it stopped, and anything in `git stash list` from this run. Tell me the next step: review the commits and push, or resolve the reported problem and run `/autopilot` again.
 4. Add one line to `AGENTS.md`: `/autopilot` builds and commits whole phases unattended; never run it unless I ask.
 
 ## 13. Port to another agent (`port <agent>`)

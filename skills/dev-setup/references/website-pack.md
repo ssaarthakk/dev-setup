@@ -12,7 +12,7 @@ Copy each one to `.agents/skills/<name>/` unchanged, with a Claude stub as in se
 2. Add `node .agents/skills/web-taste/scripts/check-taste.mjs <UI source folders>` to the `check` script, with the UI folders from `docs/ARCHITECTURE.md`.
 3. Add an empty `## Design exceptions` section to `docs/PROJECT.md` (or `docs/PLAN.md`) with one line under it: `Banned patterns from web-taste that this project allows, as "- <id>: <why>". Only the owner adds lines here.` If the plan or my answers already ask for something web-taste bans (for example a purple brand), list it there.
 4. Build `.claude/agents/design-reviewer.md`, read-only exactly like `ponytail-reviewer`. It reviews the UI files it is given against the Review section of `.agents/skills/web-taste/SKILL.md` and nothing else. If there's nothing to change, it says `No design problems found.`
-5. `/feature` runs it alongside the ponytail reviewer when the feature touched UI files, and `/ship` runs it on the whole phase. Add it to autopilot's `REVIEWERS` if autopilot is set up.
+5. `/ship` runs it on the phase's UI files alongside the other reviewers. Add it to autopilot's `REVIEWERS` if autopilot is set up.
 6. Turn the must-haves into feature cards where they apply: skeleton loaders on every feature that loads data; a real product demo on the landing page; Terms and Privacy pages for public sites with sign-ups, payments, analytics or cookies; testimonials and stats only if I gave real ones. Legal text and real proof come from me, so put them under `## Open questions` until I supply them.
 7. Add to `AGENTS.md`: `UI work follows .agents/skills/web-taste/SKILL.md. It overrides every other design skill.`
 
